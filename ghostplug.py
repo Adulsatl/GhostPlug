@@ -8,8 +8,8 @@ import requests
 from datetime import datetime
 
 # === CONFIGURATION ===
-BOT_TOKEN = "7716319908:AAEwjGNez1ogJmrfrDskEYnKHDGGvrFAxlM"
-CHAT_ID = "7925159901"
+BOT_TOKEN = ""
+CHAT_ID = ""
 LOG_FILE = "/var/log/usb_intrusion.log"
 
 # === FUNCTIONS ===
