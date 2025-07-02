@@ -1,92 +1,108 @@
- GhostPlug
-markdown
-Copy
-Edit
-# 👻 GhostPlug
 
-**GhostPlug** is a lightweight, real-time USB intrusion logger for Linux systems.  
-It monitors USB insertions and immediately sends alerts via **Telegram**, helping you secure systems from unauthorized USB usage.
+# 👻 GhostPlug – USB Intrusion Logger for Linux
+
+**GhostPlug** is a real-time USB intrusion monitoring tool for Linux.  
+It silently watches for USB insertions and instantly sends alerts to **Telegram** with full device information, while logging activity locally.
+
+Runs automatically in the background — no manual activation needed after setup.
 
 ---
 
 ## 🔐 Features
 
-- 🕵️ Real-time detection of USB insertions  
-- 📬 Telegram alerts with device name, port, and serial  
-- 📁 Logs saved to `/var/log/usb_intrusion.log`  
-- 🔄 Optional background service (auto-start on boot)  
-- 🧠 Lightweight, Python-based, and easy to customize  
+- 🧠 Runs silently in background (systemd)
+- 📬 Telegram alerts on USB insertion
+- 📝 Logs events locally to `/var/log/usb_intrusion.log`
+- 🔧 One-time install, no user activation required
+- 🖥️ Ideal for labs, shared PCs, servers, or offices
 
 ---
 
-## 📦 Requirements
+## 🧰 Requirements
 
+- Linux with `systemd` (Ubuntu, Debian, Fedora, etc.)
 - Python 3.6+
-- `udevadm` (from udev)
-- `lsusb` (from `usbutils`)
-- Telegram bot token & chat ID
-- `systemd` (for background service)
+- `udevadm`, `lsusb`, `curl`
+- Internet access (for Telegram API)
 
-Install dependencies:
+---
+
+## 📋 Step-by-Step Setup
+
+### 1️⃣ Install Required Packages
 
 ```bash
 sudo apt update
-sudo apt install python3-pip usbutils udev
+sudo apt install -y python3 python3-pip usbutils udev curl
 pip3 install requests
-⚙️ Telegram Setup
-Open @BotFather on Telegram
+```
 
-Send /newbot and follow prompts
+---
 
-Copy your Bot Token
+### 🤖 Step 2: Create Your Telegram Bot
 
-To get your chat ID:
+1. Open Telegram → search **[@BotFather](https://t.me/BotFather)**
+2. Type `/newbot` → follow the prompts
+3. Copy the **bot token** (looks like: `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11`)
+4. Send any message to your new bot
+5. In your browser, go to:
 
-Send any message to your new bot
-
-Visit:
+```
 https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates
+```
 
-Look for "chat": {"id": 123456789} — that's your CHAT_ID
+6. Look for:
 
-🛠️ Setup
-📁 1. Copy the script
-Rename the script to ghostplug.py and move it:
+```json
+"chat": {
+  "id": 000000000,
+  ...
+}
+```
 
-bash
-Copy
-Edit
+This number is your `CHAT_ID`.
+
+---
+
+### 📝 Step 3: Configure the Script
+
+1. Rename the file (if needed):
+
+```bash
+mv usb_telegram_logger.py ghostplug.py
+```
+
+2. Open `ghostplug.py` and replace:
+
+```python
+BOT_TOKEN = "YOUR_BOT_TOKEN"
+CHAT_ID = "YOUR_CHAT_ID"
+```
+
+3. Save and close the file.
+
+---
+
+### 🚀 Step 4: Move Script to System Path
+
+```bash
 sudo cp ghostplug.py /usr/local/bin/ghostplug
 sudo chmod +x /usr/local/bin/ghostplug
-Edit it and set your:
+```
 
-python
-Copy
-Edit
-BOT_TOKEN = "your-telegram-bot-token"
-CHAT_ID = "your-chat-id"
-🖐️ Manual Activation (Run When Needed)
-To run manually anytime:
+---
 
-bash
-Copy
-Edit
-sudo python3 /usr/local/bin/ghostplug
-Press Ctrl+C to stop.
+### ⚙️ Step 5: Create systemd Service (Auto-Run at Boot)
 
-🔁 Background Service (Start on Boot)
-📄 Create systemd service
-bash
-Copy
-Edit
+```bash
 sudo nano /etc/systemd/system/ghostplug.service
-Paste:
+```
 
-ini
-Copy
-Edit
+Paste this:
+
+```ini
 [Unit]
-Description=GhostPlug - USB Intrusion Logger with Telegram Alerts
+Description=GhostPlug - USB Intrusion Logger
 After=network.target
 
 [Service]
@@ -98,29 +114,87 @@ StandardError=append:/var/log/ghostplug.err
 
 [Install]
 WantedBy=multi-user.target
-✅ Enable and Start
-bash
-Copy
-Edit
+```
+
+Save and exit.
+
+---
+
+### 🔁 Step 6: Enable & Start the Service (No Manual Activation Needed)
+
+```bash
 sudo systemctl daemon-reload
 sudo systemctl enable ghostplug
 sudo systemctl start ghostplug
-🧪 Verify It's Running
-bash
-Copy
-Edit
-sudo systemctl status ghostplug
-You should see:
-Active: active (running)
+```
 
-📬 Telegram Alert Format
-When a USB is inserted, you receive:
+✅ **GhostPlug will now run automatically at every startup.**
 
-yaml
-Copy
-Edit
+---
+
+## 🧪 Test
+
+Insert a USB device — you should receive a Telegram alert like this:
+
+```
 🛑 USB Inserted
 📅 Date: 2025-07-02 10:45:20
 💾 Device: SanDisk Cruzer Blade
 🔌 Port: /dev/sdb
 🔐 Serial: 4C530001230520104281
+```
+
+---
+
+## 📁 Logs
+
+| File                             | Description                     |
+|----------------------------------|---------------------------------|
+| `/var/log/usb_intrusion.log`     | USB device insertion history    |
+| `/var/log/ghostplug.log`         | Background stdout logs (systemd)|
+| `/var/log/ghostplug.err`         | Background error logs           |
+
+---
+
+## 🧠 Useful Commands
+
+| Action               | Command                                 |
+|----------------------|-----------------------------------------|
+| Check service status | `sudo systemctl status ghostplug`       |
+| Stop GhostPlug       | `sudo systemctl stop ghostplug`         |
+| Restart GhostPlug    | `sudo systemctl restart ghostplug`      |
+| Disable on boot      | `sudo systemctl disable ghostplug`      |
+| View live log        | `tail -f /var/log/ghostplug.log`        |
+
+---
+
+## ✅ Tested On
+
+- Ubuntu 20.04 / 22.04
+- Debian 11+
+- Fedora 36+
+- Kali Linux
+- Arch Linux (with `systemd`)
+
+---
+
+## 📜 License
+
+MIT License — Free to use, modify, and redistribute.
+
+---
+
+## 👤 Author
+
+**Adul S**  
+📍 Trivandrum, India  
+🔗 [LinkedIn](https://linkedin.com/in/aduls2002)  
+📧 aduls.career@gmail.com
+
+---
+
+## 🙌 Support & Contributions
+
+Have ideas or improvements? Pull requests and issues are welcome.
+
+Let’s build the **cleanest, stealthiest Linux USB logger** ever.
